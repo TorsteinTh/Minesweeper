@@ -1,5 +1,7 @@
 import pygame as pg
 import precode as pc
+import random
+from faker import Factory
 
 
 class Box(pg.sprite.Sprite):
@@ -30,9 +32,11 @@ class Map(pg.sprite.Sprite):
         self.createmap()
 
     def createmap(self):
+        faker = Factory.create()
         for i in range(self.row):
             for j in range (self.column):
-                isBomb = True
+                # isBomb = random.choice([True, False])
+                isBomb = faker.boolean(chance_of_getting_true = 20)
                 box = Box("Images/facingDown.png", i, j, isBomb)
                 box.rect.x += (i * int(700/10))
                 box.rect.y += (j * int(700/10))
@@ -52,7 +56,6 @@ class Map(pg.sprite.Sprite):
                         self.changeImage(box, i, j)
 
     def changeImage(self, box, i, j):
-        # print("changing image")
         if box.isBomb:
             box.image = pg.image.load("Images/bomb.png")
         else:
