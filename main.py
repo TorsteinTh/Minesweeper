@@ -10,7 +10,10 @@ class Box(pg.sprite.Sprite):
         self.image = pg.image.load(image)
         self.image = pg.transform.scale(self.image,(int(700/10),int(700/10)))
         self.rect = self.image.get_rect()
+        self.row = row
+        self.column = column
         self.isBomb = isBomb 
+        self.sur = 0
 
     
     def setup():
@@ -53,17 +56,52 @@ class Map(pg.sprite.Sprite):
                 box = self.boxArray[i][j]
                 if box.rect.x < mousePos[0] and box.rect.right > mousePos[0]:
                     if box.rect.y < mousePos[1] and box.rect.bottom > mousePos[1]:
-                        self.changeImage(box, i, j)
+                        self.checkSur(box)
+                        self.changeImage(box)
 
-    def changeImage(self, box, i, j):
+    def checkSur(self, box):
+        tmp = 0
+        for i in range(-1,2):
+            for j in range(-1,2):
+                rowing = box.row + i
+                columning = box.column + j
+                if rowing not in range(0, self.row):
+                    continue
+                if columning not in range(0, self.column):
+                    continue
+
+                tmpBox = self.boxArray[rowing][columning]
+                if tmpBox.isBomb:
+                    tmp+=1
+        box.sur = tmp
+
+    def changeImage(self, box):
+        if box.sur == 0:
+            box.image = pg.image.load("Images/0.png")
+        elif box.sur == 1:
+            box.image = pg.image.load("Images/1.png")
+        elif box.sur == 2:
+            box.image = pg.image.load("Images/2.png")
+        elif box.sur == 3:
+            box.image = pg.image.load("Images/3.png")
+        elif box.sur == 4:
+            box.image = pg.image.load("Images/4.png")
+        elif box.sur == 5:
+            box.image = pg.image.load("Images/5.png")
+        elif box.sur == 6:
+            box.image = pg.image.load("Images/6.png")
+        elif box.sur == 7:
+            box.image = pg.image.load("Images/7.png")
+        elif box.sur == 8:
+            box.image = pg.image.load("Images/8.png")
+
         if box.isBomb:
             box.image = pg.image.load("Images/bomb.png")
-        else:
-            box.image = pg.image.load("Images/0.png")
+
         box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
         box.rect = box.image.get_rect()
-        box.rect.x += (i * int(700/10))
-        box.rect.y += (j * int(700/10))
+        box.rect.x += (box.row * int(700/10))
+        box.rect.y += (box.column * int(700/10))
 
 
 class Main():
@@ -97,7 +135,6 @@ class Main():
                     if event.key == pg.K_r:
                         self.restart()
                 if event.type == pg.MOUSEBUTTONDOWN: 
-                    # print(pg.mouse.get_pos())
                     self.maping.onClick(pg.mouse.get_pos())
     
             pg.display.update()                 
