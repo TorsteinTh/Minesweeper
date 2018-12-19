@@ -15,16 +15,7 @@ class Box(pg.sprite.Sprite):
         self.isBomb = isBomb 
         self.sur = 0
         self.fliped = False
-
-    
-    def setup():
-        pass 
-
-    def open():
-        pass
-    
-    def flag():
-        pass
+        self.flag = False
     
 class Map(pg.sprite.Sprite):
     def __init__(self):
@@ -33,6 +24,7 @@ class Map(pg.sprite.Sprite):
         self.column = 10
         self.boxGroup = pg.sprite.Group()
         self.boxArray = [[object for i in range(self.row)] for i in range(self.column)]
+        self.win = 0
         self.createmap()
         self.setSur()
 
@@ -40,7 +32,9 @@ class Map(pg.sprite.Sprite):
         faker = Factory.create()
         for i in range(self.row):
             for j in range (self.column):
-                isBomb = faker.boolean(chance_of_getting_true = 5)
+                isBomb = faker.boolean(chance_of_getting_true = 10)
+                if isBomb:
+                    self.win += 1
                 box = Box("Images/facingDown.png", i, j, isBomb)
                 box.rect.x += (i * int(700/10))
                 box.rect.y += (j * int(700/10))
@@ -51,16 +45,33 @@ class Map(pg.sprite.Sprite):
         self.boxGroup.draw(window)
         self.boxGroup.update()
 
-    def onClick(self, mousePos):
+    def findBox(self, mousePos):
         for i in range(self.row):
             for j in range(self.column):
                 box = self.boxArray[i][j]
                 if box.rect.x < mousePos[0] and box.rect.right > mousePos[0]:
                     if box.rect.y < mousePos[1] and box.rect.bottom > mousePos[1]:
-                        self.changeImage(box)
-                        if box.sur == 0:
-                             self.emptySur(box)
-    
+                        return box
+
+    def onClickLeft(self, mousePos):
+        box = self.findBox(mousePos)
+        if box:
+            if not box.flag:
+                self.changeImage(box)
+            if box.sur == 0 and not box.flag:
+                self.emptySur(box)
+            if not box.flag:
+                box.fliped = True
+
+    def onClickRight(self, mousePos):
+        box = self.findBox(mousePos)
+        if box:
+            if not box.fliped:
+                if not box.flag:
+                    self.flag(box)
+                else:
+                    self.unflag(box)
+        
     def emptySur(self, box):
         for i in range(-1,2):
             for j in range(-1,2):
@@ -71,18 +82,19 @@ class Map(pg.sprite.Sprite):
                 if columning not in range(self.column):
                     continue
                 tmpBox = self.boxArray[rowing][columning]
+
                 if tmpBox is box: 
                     continue
 
-                if tmpBox.isBomb == False and tmpBox.fliped == False:
+                if tmpBox.isBomb == False and tmpBox.fliped == False and not tmpBox.flag:
                     self.changeImage(tmpBox)
 
-                if tmpBox.sur == 0 and tmpBox.fliped == False:
-                    print("tmpbox", tmpBox.row, tmpBox.column)
-
+                if tmpBox.sur == 0 and tmpBox.fliped == False and not tmpBox.flag:
                     tmpBox.fliped = True
                     self.emptySur(tmpBox)
 
+                if tmpBox.fliped == False and not tmpBox.flag:
+                    tmpBox.fliped = True
 
     def setSur(self):
         for i in range(self.row):
@@ -90,7 +102,7 @@ class Map(pg.sprite.Sprite):
                 self.checkSur(self.boxArray[i][j])
 
     def checkSur(self, box):
-        tmp = 0
+        tmpSur = 0
         for i in range(-1,2):
             for j in range(-1,2):
                 rowing = box.row + i
@@ -102,8 +114,8 @@ class Map(pg.sprite.Sprite):
 
                 tmpBox = self.boxArray[rowing][columning]
                 if tmpBox.isBomb:
-                    tmp+=1
-        box.sur = tmp
+                    tmpSur+=1
+        box.sur = tmpSur
 
     def changeImage(self, box):
         if box.sur == 0:
@@ -132,6 +144,22 @@ class Map(pg.sprite.Sprite):
         box.rect = box.image.get_rect()
         box.rect.x += (box.row * int(700/10))
         box.rect.y += (box.column * int(700/10))
+
+    def flag(self, box):
+        box.image = pg.image.load("Images/flagged.png")
+        box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
+        box.rect = box.image.get_rect()
+        box.rect.x += (box.row * int(700/10))
+        box.rect.y += (box.column * int(700/10))
+        box.flag = True if not box.flag else False 
+
+    def unflag(self, box):
+            box.image = pg.image.load("Images/facingDown.png")
+            box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
+            box.rect = box.image.get_rect()
+            box.rect.x += (box.row * int(700/10))
+            box.rect.y += (box.column * int(700/10))
+            box.flag = True if not box.flag else False 
 
 
 class Main():
@@ -165,8 +193,12 @@ class Main():
                     if event.key == pg.K_r:
                         self.restart()
                 if event.type == pg.MOUSEBUTTONDOWN: 
-                    self.maping.onClick(pg.mouse.get_pos())
-    
+                    mouse = pg.mouse.get_pressed()
+                    if mouse[0]:
+                        self.maping.onClickLeft(pg.mouse.get_pos())
+                    if mouse[2]:
+                        self.maping.onClickRight(pg.mouse.get_pos())
+
             pg.display.update()                 
             self.clock.tick(self.fps)
 
