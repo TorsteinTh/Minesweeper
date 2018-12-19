@@ -14,6 +14,7 @@ class Box(pg.sprite.Sprite):
         self.column = column
         self.isBomb = isBomb 
         self.sur = 0
+        self.fliped = False
 
     
     def setup():
@@ -33,13 +34,13 @@ class Map(pg.sprite.Sprite):
         self.boxGroup = pg.sprite.Group()
         self.boxArray = [[object for i in range(self.row)] for i in range(self.column)]
         self.createmap()
+        self.setSur()
 
     def createmap(self):
         faker = Factory.create()
         for i in range(self.row):
             for j in range (self.column):
-                # isBomb = random.choice([True, False])
-                isBomb = faker.boolean(chance_of_getting_true = 20)
+                isBomb = faker.boolean(chance_of_getting_true = 5)
                 box = Box("Images/facingDown.png", i, j, isBomb)
                 box.rect.x += (i * int(700/10))
                 box.rect.y += (j * int(700/10))
@@ -56,8 +57,37 @@ class Map(pg.sprite.Sprite):
                 box = self.boxArray[i][j]
                 if box.rect.x < mousePos[0] and box.rect.right > mousePos[0]:
                     if box.rect.y < mousePos[1] and box.rect.bottom > mousePos[1]:
-                        self.checkSur(box)
                         self.changeImage(box)
+                        if box.sur == 0:
+                             self.emptySur(box)
+    
+    def emptySur(self, box):
+        for i in range(-1,2):
+            for j in range(-1,2):
+                rowing = box.row + i
+                columning = box.column + j
+                if rowing not in range(self.row):
+                    continue
+                if columning not in range(self.column):
+                    continue
+                tmpBox = self.boxArray[rowing][columning]
+                if tmpBox is box: 
+                    continue
+
+                if tmpBox.isBomb == False and tmpBox.fliped == False:
+                    self.changeImage(tmpBox)
+
+                if tmpBox.sur == 0 and tmpBox.fliped == False:
+                    print("tmpbox", tmpBox.row, tmpBox.column)
+
+                    tmpBox.fliped = True
+                    self.emptySur(tmpBox)
+
+
+    def setSur(self):
+        for i in range(self.row):
+            for j in range(self.column):
+                self.checkSur(self.boxArray[i][j])
 
     def checkSur(self, box):
         tmp = 0
@@ -65,9 +95,9 @@ class Map(pg.sprite.Sprite):
             for j in range(-1,2):
                 rowing = box.row + i
                 columning = box.column + j
-                if rowing not in range(0, self.row):
+                if rowing not in range(self.row):
                     continue
-                if columning not in range(0, self.column):
+                if columning not in range(self.column):
                     continue
 
                 tmpBox = self.boxArray[rowing][columning]
