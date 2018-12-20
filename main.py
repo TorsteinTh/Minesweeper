@@ -17,14 +17,17 @@ class Box(pg.sprite.Sprite):
         self.fliped = False
         self.flag = False
     
-class Map(pg.sprite.Sprite):
-    def __init__(self):
+class Map(pg.sprite.Sprite): 
+    def __init__(self, screen):
         pg.sprite.Sprite.__init__(self)
+        self.screen = screen
         self.row = 10
         self.column = 10
         self.boxGroup = pg.sprite.Group()
         self.boxArray = [[object for i in range(self.row)] for i in range(self.column)]
-        self.win = 0
+        self.total = 0
+        self.won = False
+        self.lose = False
         self.createmap()
         self.setSur()
 
@@ -34,7 +37,7 @@ class Map(pg.sprite.Sprite):
             for j in range (self.column):
                 isBomb = faker.boolean(chance_of_getting_true = 10)
                 if isBomb:
-                    self.win += 1
+                    self.total += 1
                 box = Box("Images/facingDown.png", i, j, isBomb)
                 box.rect.x += (i * int(700/10))
                 box.rect.y += (j * int(700/10))
@@ -67,10 +70,7 @@ class Map(pg.sprite.Sprite):
         box = self.findBox(mousePos)
         if box:
             if not box.fliped:
-                if not box.flag:
-                    self.flag(box)
-                else:
-                    self.unflag(box)
+                self.flag(box)
         
     def emptySur(self, box):
         for i in range(-1,2):
@@ -115,6 +115,7 @@ class Map(pg.sprite.Sprite):
                 tmpBox = self.boxArray[rowing][columning]
                 if tmpBox.isBomb:
                     tmpSur+=1
+
         box.sur = tmpSur
 
     def changeImage(self, box):
@@ -139,6 +140,7 @@ class Map(pg.sprite.Sprite):
 
         if box.isBomb:
             box.image = pg.image.load("Images/bomb.png")
+            self.lose = True
 
         box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
         box.rect = box.image.get_rect()
@@ -146,21 +148,51 @@ class Map(pg.sprite.Sprite):
         box.rect.y += (box.column * int(700/10))
 
     def flag(self, box):
-        box.image = pg.image.load("Images/flagged.png")
+        if box.flag:
+            box.image = pg.image.load("Images/facingDown.png")
+        else:
+            box.image = pg.image.load("Images/flagged.png")
         box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
         box.rect = box.image.get_rect()
         box.rect.x += (box.row * int(700/10))
         box.rect.y += (box.column * int(700/10))
         box.flag = True if not box.flag else False 
 
-    def unflag(self, box):
-            box.image = pg.image.load("Images/facingDown.png")
-            box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
-            box.rect = box.image.get_rect()
-            box.rect.x += (box.row * int(700/10))
-            box.rect.y += (box.column * int(700/10))
-            box.flag = True if not box.flag else False 
+    def losing(self, x, y):
+        font = pg.font.Font(None, 150)
+        self.screen.blit(font.render("YOU LOSE", 20, (0, 0, 0)),(110 + x, 200 + y))
+        fonte = pg.font.Font(None, 30)
+        self.screen.blit(fonte.render("PRESS 'R' TO RESTART", 30, (0, 0, 0)),(260 + y, 360))
+        self.screen.blit(fonte.render("PRESS 'Q' or 'Esc' TO QUIT", 30, (0, 0, 0)),(240 + x,390))
 
+        pg.display.update()                 
+
+    
+    def winning(self, x, y):
+        font = pg.font.Font(None, 150)
+        self.screen.blit(font.render("YOU WON", 20, (255, 255, 0)),(110 + x, 200 + y))
+        fonte = pg.font.Font(None, 30)
+        self.screen.blit(fonte.render("PRESS 'R' TO RESTART", 30, (0, 0, 0)),(260 + y, 360))
+        self.screen.blit(fonte.render("PRESS 'Q' or 'Esc' TO QUIT", 30, (0, 0, 0)),(240 + x,390))
+
+        pg.display.update()  
+
+    def unflipped(self):
+        left = 0
+        for i in range(self.row):
+            for j in range(self.column):
+                box = self.boxArray[i][j]
+                if not box.fliped:
+                    left += 1
+        if left == self.total:
+            self.won = True
+    
+    def drawBomb(self):
+        for i in range(self.row):
+            for j in range(self.column):
+                box = self.boxArray[i][j]
+                if box.isBomb:
+                    self.changeImage(box)
 
 class Main():
     def __init__(self):
@@ -168,39 +200,73 @@ class Main():
         pg.display.set_caption("Minesweeper")
         screen_dim = [700 , 700]               
         self.window = pg.display.set_mode(screen_dim)
-        self.fps = 100
+        self.fps = 60
         self.clock = pg.time.Clock()
 
-        self.maping = Map()
+        self.maping = Map(self.window)
         self.main()
 
     def restart(self):
         print("restarting...")
-        self.maping = Map()
+        self.maping = Map(self.window)
 
     def main(self):
-        while True:    
-            self.window.fill((200, 20, 20))
+        while True:
+            while not self.maping.won and not self.maping.lose:    
 
-            self.maping.draw(self.window)
-
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    exit()
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_ESCAPE or event.key == pg.K_q:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
                         exit()
-                    if event.key == pg.K_r:
-                        self.restart()
-                if event.type == pg.MOUSEBUTTONDOWN: 
-                    mouse = pg.mouse.get_pressed()
-                    if mouse[0]:
-                        self.maping.onClickLeft(pg.mouse.get_pos())
-                    if mouse[2]:
-                        self.maping.onClickRight(pg.mouse.get_pos())
+                    if event.type == pg.KEYDOWN:
+                        if event.key == pg.K_ESCAPE or event.key == pg.K_q:
+                            exit()
+                        if event.key == pg.K_r:
+                            self.restart()
+                        if event.key == pg.K_y:
+                            self.maping.won = True
+                    if event.type == pg.MOUSEBUTTONDOWN: 
+                        mouse = pg.mouse.get_pressed()
+                        if mouse[0]:
+                            self.maping.onClickLeft(pg.mouse.get_pos())
+                        if mouse[2]:
+                            self.maping.onClickRight(pg.mouse.get_pos())
 
-            pg.display.update()                 
-            self.clock.tick(self.fps)
+                self.window.fill((200, 20, 20))
+
+                self.maping.draw(self.window)
+                self.maping.unflipped()
+
+                pg.display.update()
+                self.clock.tick(self.fps)
+            
+            while self.maping.won or self.maping.lose: 
+                import math
+                radius = 10
+                for angle in range(0, 360, 10):                      
+                    for event in pg.event.get():
+                        if event.type == pg.QUIT:
+                            exit()
+                        if event.type == pg.KEYDOWN:
+                            if event.key == pg.K_ESCAPE or event.key == pg.K_q:
+                                exit()
+                            if event.key == pg.K_r:
+                                self.restart()  
+                                self.lose = False
+                                self.main()      
+
+                    theta = math.radians(angle)
+                    x = radius*math.cos(theta)
+                    y = radius*math.sin(theta) 
+
+                    self.window.fill((200, 20, 20))
+                    self.maping.draw(self.window)
+                    if self.maping.lose:
+                        self.maping.losing(x, y)
+                        self.maping.drawBomb()
+                    else:
+                        self.maping.winning(x, y)
+                    pg.display.update()                 
+                    self.clock.tick(self.fps)
 
 
 if __name__ == "__main__":
