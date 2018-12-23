@@ -5,10 +5,10 @@ from faker import Factory
 
 
 class Box(pg.sprite.Sprite):
-    def __init__(self, image, row, column, isBomb=False):
+    def __init__(self, image, row, column, size, isBomb=False):
         pg.sprite.Sprite.__init__(self)
         self.image = pg.image.load(image)
-        self.image = pg.transform.scale(self.image,(int(700/10),int(700/10)))
+        self.image = pg.transform.scale(self.image,(int(700/size),int(700/size)))
         self.rect = self.image.get_rect()
         self.row = row
         self.column = column
@@ -27,13 +27,14 @@ class MenuBox(pg.sprite.Sprite):
 
     
 class Map(pg.sprite.Sprite): 
-    def __init__(self, screen):
+    def __init__(self, screen, size):
         pg.sprite.Sprite.__init__(self)
         self.screen = screen
-        self.row = 10
-        self.column = 10
+        self.size = size
+        self.row = size
+        self.column = size
         self.boxGroup = pg.sprite.Group()
-        self.boxArray = [[object for i in range(self.row)] for i in range(self.column)]
+        self.boxArray = [[object for i in range(self.size)] for i in range(self.size)]
         self.total = 0
         self.won = False
         self.lose = False
@@ -47,9 +48,9 @@ class Map(pg.sprite.Sprite):
                 isBomb = faker.boolean(chance_of_getting_true = 10)
                 if isBomb:
                     self.total += 1
-                box = Box("Images/facingDown.png", i, j, isBomb)
-                box.rect.x += (i * int(700/10))
-                box.rect.y += (j * int(700/10))
+                box = Box("Images/facingDown.png", i, j, self.size, isBomb)
+                box.rect.x += (i * int(700/self.size))
+                box.rect.y += (j * int(700/self.size))
                 self.boxGroup.add(box)
                 self.boxArray[i][j] = box
 
@@ -151,20 +152,20 @@ class Map(pg.sprite.Sprite):
             box.image = pg.image.load("Images/bomb.png")
             self.lose = True
 
-        box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
+        box.image = pg.transform.scale(box.image,(int(700/self.size),int(700/self.size)))
         box.rect = box.image.get_rect()
-        box.rect.x += (box.row * int(700/10))
-        box.rect.y += (box.column * int(700/10))
+        box.rect.x += (box.row * int(700/self.size))
+        box.rect.y += (box.column * int(700/self.size))
 
     def flag(self, box):
         if box.flag:
             box.image = pg.image.load("Images/facingDown.png")
         else:
             box.image = pg.image.load("Images/flagged.png")
-        box.image = pg.transform.scale(box.image,(int(700/10),int(700/10)))
+        box.image = pg.transform.scale(box.image,(int(700/self.size),int(700/self.size)))
         box.rect = box.image.get_rect()
-        box.rect.x += (box.row * int(700/10))
-        box.rect.y += (box.column * int(700/10))
+        box.rect.x += (box.row * int(700/self.size))
+        box.rect.y += (box.column * int(700/self.size))
         box.flag = True if not box.flag else False 
 
     def losing(self, x, y):
@@ -216,9 +217,9 @@ class Main():
         self.boxArray = [ int for i in range(3)]
 
         self.createMenu()
-        self.menuing()
+        size = self.menuing()
 
-        self.maping = Map(self.window)
+        self.maping = Map(self.window, size)
         self.main()
     
     def createMenu(self):
@@ -249,9 +250,9 @@ class Main():
     def findBox(self, mousePos, boxArray):
         for i in range(3):
             box = boxArray[i]
-            print(box.nr)
             if box.rect.x < mousePos[0] and box.rect.right > mousePos[0]:
                 if box.rect.y < mousePos[1] and box.rect.bottom > mousePos[1]:
+                    print(box.nr)
                     return box
         
     def restart(self):
@@ -270,9 +271,11 @@ class Main():
                 if event.type == pg.MOUSEBUTTONDOWN: 
                     mouse = pg.mouse.get_pressed()
                     if mouse[0]:
-                        return self.onClickLeft(pg.mouse.get_pos(), self.boxArray)
+                        box = self.onClickLeft(pg.mouse.get_pos(), self.boxArray)
+                        if box:
+                            return box.nr
 
-            self.window.fill((255, 255, 255))
+            self.window.fill((240, 240, 240))
 
             self.boxGroup.draw(self.window)
             self.boxGroup.update()
