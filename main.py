@@ -17,6 +17,15 @@ class Box(pg.sprite.Sprite):
         self.fliped = False
         self.flag = False
     
+class MenuBox(pg.sprite.Sprite):
+    def __init__(self, image, nr):
+        pg.sprite.Sprite.__init__(self)
+        self.image = pg.image.load(image)
+        self.image = pg.transform.scale(self.image,(int(240),int(150)))
+        self.rect = self.image.get_rect()
+        self.nr = nr
+
+    
 class Map(pg.sprite.Sprite): 
     def __init__(self, screen):
         pg.sprite.Sprite.__init__(self)
@@ -203,12 +212,74 @@ class Main():
         self.fps = 60
         self.clock = pg.time.Clock()
 
+        self.boxGroup = pg.sprite.Group()
+        self.boxArray = [ int for i in range(3)]
+
+        self.createMenu()
+        self.menuing()
+
         self.maping = Map(self.window)
         self.main()
+    
+    def createMenu(self):
+        menuBoxSmall = MenuBox("Images/Small.png", 10)
+        menuBoxMedium = MenuBox("Images/Medium.png", 20)
+        menuBoxBig = MenuBox("Images/Big.png", 50)
 
+        menuBoxMedium.rect.x += 250
+        menuBoxBig.rect.x += 500
+
+        menuBoxSmall.rect.y += 100
+        menuBoxMedium.rect.y += 200
+        menuBoxBig.rect.y += 300
+
+        self.boxArray[0] = menuBoxSmall
+        self.boxArray[1] = menuBoxMedium
+        self.boxArray[2] = menuBoxBig
+
+        self.boxGroup.add(menuBoxSmall)
+        self.boxGroup.add(menuBoxMedium)
+        self.boxGroup.add(menuBoxBig)
+
+    def onClickLeft(self, mousePos, boxArray):
+        box = self.findBox(mousePos, boxArray)
+        if box:
+            return box
+        
+    def findBox(self, mousePos, boxArray):
+        for i in range(3):
+            box = boxArray[i]
+            print(box.nr)
+            if box.rect.x < mousePos[0] and box.rect.right > mousePos[0]:
+                if box.rect.y < mousePos[1] and box.rect.bottom > mousePos[1]:
+                    return box
+        
     def restart(self):
         print("restarting...")
-        self.maping = Map(self.window)
+        Main()
+        # self.maping = Map(self.window)
+
+    def menuing(self):
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    exit()
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE or event.key == pg.K_q:
+                        exit()
+                if event.type == pg.MOUSEBUTTONDOWN: 
+                    mouse = pg.mouse.get_pressed()
+                    if mouse[0]:
+                        return self.onClickLeft(pg.mouse.get_pos(), self.boxArray)
+
+            self.window.fill((255, 255, 255))
+
+            self.boxGroup.draw(self.window)
+            self.boxGroup.update()
+
+            pg.display.update()
+            self.clock.tick(self.fps)
+            
 
     def main(self):
         while True:
