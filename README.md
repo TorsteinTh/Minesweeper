@@ -1,13 +1,17 @@
 # Minesweeper
 
-To start the game:
+Do install faker, before starting the game:
 ```
 pip install faker 
 ```
 <br/>
+
+To start the game:
 ```
 python main.py
-```
+``` 
+
+<br/>
 <br/>
 Three different levels: easy (10x10), medium (20x20) and hard (50x50)!
 <br/>
