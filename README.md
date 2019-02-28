@@ -1,8 +1,25 @@
 # Minesweeper
 
-Game to play
+To start the game:
+```
+pip install faker 
+```
+<br/>
+```
+python main.py
+```
+<br/>
+Three different levels: easy (10x10), medium (20x20) and hard (50x50)!
+<br/>
 
-Three different levels: easy, medium and hard!
+Please enjoy the game :)
+
+<br/>
+<br/>
+<br/>
 
 
-Enjoy
+## Authors
+
+* **Torstein Thomassen** - [Github.com/Torsteinth](https://github.com/Torsteinth)
+

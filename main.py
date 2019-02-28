@@ -1,5 +1,4 @@
 import pygame as pg
-import precode as pc
 import random
 from faker import Factory
 
@@ -258,7 +257,6 @@ class Main():
     def restart(self):
         print("restarting...")
         Main()
-        # self.maping = Map(self.window)
 
     def menuing(self):
         while True:
